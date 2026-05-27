@@ -1,4 +1,11 @@
 package com.delivery.deliveryplataform.auth.application.dto;
 
-public class AuthResponse {
-}
+import com.delivery.deliveryplataform.auth.domain.model.Role;
+
+public record AuthResponse(
+        String token,
+        Long userId,
+        String email,
+        String name,
+        Role role
+) {}
