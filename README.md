@@ -53,7 +53,7 @@ bash./mvnw spring-boot:run
 Al arrancar por primera vez, el sistema creará automáticamente todas las tablas necesarias en la base de datos. No tienes que hacerlo a mano.
 
 ¿Qué puedo explorar una vez que esté corriendo?
-Una vez levantado el servidor, tendrás acceso a los endpoints REST de la API (normalmente en http://localhost:8080). Puedes probarlos con herramientas como Postman o Insomnia, o revisar la documentación generada automáticamente si está habilitada.
+Una vez levantado el servidor, tendrás acceso a los endpoints REST de la API (normalmente en xxxxxx). Puedes probarlos con herramientas como Postman, o revisar la documentación generada automáticamente si está habilitada.
 
 Estructura del proyecto (para desarrolladores)
 Cada módulo del sistema sigue la misma organización interna:
