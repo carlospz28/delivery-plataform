@@ -14,6 +14,7 @@ import com.delivery.deliveryplataform.orders.domain.model.Order;
 import com.delivery.deliveryplataform.orders.domain.model.OrderItem;
 import com.delivery.deliveryplataform.orders.domain.model.OrderStatus;
 import com.delivery.deliveryplataform.orders.infrastructure.persistence.OrderRepository;
+import com.delivery.deliveryplataform.notifications.application.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,7 @@ public class OrderService {
     private final RestaurantRepository restaurantRepository;
     private final DriverRepository driverRepository;
     private final DishRepository dishRepository;
+    private final NotificationService notificationService;
 
     // ========== CREAR PEDIDO ==========
     @Transactional
@@ -74,7 +76,16 @@ public class OrderService {
         }
         order.setTotal(total);
 
-        return toResponse(orderRepository.save(order));
+        Order savedOrder = orderRepository.save(order);
+
+        // Notificar al cliente que su pedido fue recibido
+        notificationService.createNotification(
+                customer.getId(),
+                "Tu pedido #" + savedOrder.getId() + " ha sido recibido por el restaurante " + restaurant.getBusinessName() + ". ¡Pronto comenzarán a prepararlo!",
+                "ORDER_RECEIVED"
+        );
+
+        return toResponse(savedOrder);
     }
 
     // ========== OBTENER UN PEDIDO ==========
@@ -130,6 +141,12 @@ public class OrderService {
                     throw new RuntimeException("Solo se puede aceptar un pedido en estado RECIBIDA");
                 if (!order.getRestaurant().getUser().getId().equals(user.getId()))
                     throw new RuntimeException("Este pedido no es de tu restaurante");
+                // Notificar al cliente que su pedido está en preparación
+                notificationService.createNotification(
+                        order.getCustomer().getId(),
+                        "¡Buenas noticias! El restaurante " + order.getRestaurant().getBusinessName() + " ya está preparando tu pedido #" + orderId + ".",
+                        "ORDER_PREPARING"
+                );
             }
             case EN_CAMINO -> {
                 if (user.getRole() != Role.RESTAURANTE)
@@ -141,6 +158,12 @@ public class OrderService {
                 Driver driver = driverRepository.findById(request.driverId())
                         .orElseThrow(() -> new RuntimeException("Repartidor no encontrado"));
                 order.setDriver(driver);
+                // Notificar al cliente que el repartidor está en camino
+                notificationService.createNotification(
+                        order.getCustomer().getId(),
+                        "🛵 Tu pedido #" + orderId + " ya está en camino. Tu repartidor " + driver.getUser().getName() + " se dirige a tu dirección.",
+                        "ORDER_ON_WAY"
+                );
             }
             case ENTREGADA -> {
                 if (user.getRole() != Role.REPARTIDOR)

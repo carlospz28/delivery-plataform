@@ -18,6 +18,7 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final EmailService emailService;
 
     // Este método lo usarían internamente otros servicios (ej. Orders) para enviar notificaciones
     @Transactional
@@ -33,6 +34,13 @@ public class NotificationService {
                 .build();
 
         notificationRepository.save(notification);
+
+        // Enviar correo de forma asíncrona para no bloquear la petición
+        emailService.sendEmail(
+                user.getEmail(),
+                buildSubject(type),
+                buildBody(user.getName(), message)
+        );
     }
 
     public List<NotificationResponse> getMyNotifications(String email) {
@@ -69,4 +77,22 @@ public class NotificationService {
                 notification.getCreatedAt()
         );
     }
+
+    private String buildSubject(String type) {
+        return switch (type) {
+            case "LOGIN_SUCCESS"   -> "🔐 Inicio de sesión exitoso - DeliveryApp";
+            case "ORDER_RECEIVED"  -> "📦 Pedido recibido - DeliveryApp";
+            case "ORDER_PREPARING" -> "👨‍🍳 Tu pedido está en preparación - DeliveryApp";
+            case "ORDER_ON_WAY"    -> "🛵 Tu pedido está en camino - DeliveryApp";
+            default                -> "🔔 Nueva notificación - DeliveryApp";
+        };
+    }
+
+    private String buildBody(String userName, String message) {
+        return "Hola " + userName + ",\n\n" +
+               message + "\n\n" +
+               "Gracias por usar DeliveryApp.\n" +
+               "El equipo de DeliveryApp";
+    }
 }
+
