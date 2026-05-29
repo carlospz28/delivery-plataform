@@ -11,6 +11,7 @@ import com.delivery.deliveryplataform.auth.infrastructure.persistence.DriverRepo
 import com.delivery.deliveryplataform.auth.infrastructure.persistence.RestaurantRepository;
 import com.delivery.deliveryplataform.auth.infrastructure.persistence.UserRepository;
 import com.delivery.deliveryplataform.auth.infrastructure.security.JwtUtil;
+import com.delivery.deliveryplataform.notifications.application.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -28,6 +29,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
+    private final NotificationService notificationService;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -87,7 +89,10 @@ public class AuthService {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // 3. Generar token y devolver
+        // 3. Crear notificación de inicio de sesión exitoso
+        notificationService.createNotification(user.getId(), "Inicio de sesión exitoso desde tu cuenta.", "LOGIN_SUCCESS");
+
+        // 4. Generar token y devolver
         String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
         return new AuthResponse(token, user.getId(), user.getEmail(), user.getName(), user.getRole());
     }
