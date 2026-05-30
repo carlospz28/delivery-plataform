@@ -5,11 +5,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableAsync;
 
 @SpringBootApplication
-@EnableAsync
+@EnableAsync   // ← esta es la clave
 public class DeliveryPlataformApplication {
-
     public static void main(String[] args) {
         SpringApplication.run(DeliveryPlataformApplication.class, args);
     }
-
 }
