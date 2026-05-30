@@ -68,7 +68,7 @@ public class OrderService {
             OrderItem item = OrderItem.builder()
                     .dish(dish)
                     .quantity(itemReq.quantity())
-                    .unitPrice(dish.getPrice())  // snapshot del precio al momento del pedido
+                    .unitPrice(dish.getPrice())
                     .build();
             order.addItem(item);
 
@@ -78,7 +78,6 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
-        // Notificar al cliente que su pedido fue recibido
         notificationService.createNotification(
                 customer.getId(),
                 "Tu pedido #" + savedOrder.getId() + " ha sido recibido por el restaurante " + restaurant.getBusinessName() + ". ¡Pronto comenzarán a prepararlo!",
@@ -141,7 +140,6 @@ public class OrderService {
                     throw new RuntimeException("Solo se puede aceptar un pedido en estado RECIBIDA");
                 if (!order.getRestaurant().getUser().getId().equals(user.getId()))
                     throw new RuntimeException("Este pedido no es de tu restaurante");
-                // Notificar al cliente que su pedido está en preparación
                 notificationService.createNotification(
                         order.getCustomer().getId(),
                         "¡Buenas noticias! El restaurante " + order.getRestaurant().getBusinessName() + " ya está preparando tu pedido #" + orderId + ".",
@@ -158,7 +156,6 @@ public class OrderService {
                 Driver driver = driverRepository.findById(request.driverId())
                         .orElseThrow(() -> new RuntimeException("Repartidor no encontrado"));
                 order.setDriver(driver);
-                // Notificar al cliente que el repartidor está en camino
                 notificationService.createNotification(
                         order.getCustomer().getId(),
                         "🛵 Tu pedido #" + orderId + " ya está en camino. Tu repartidor " + driver.getUser().getName() + " se dirige a tu dirección.",
@@ -172,6 +169,12 @@ public class OrderService {
                     throw new RuntimeException("El pedido debe estar EN_CAMINO para entregarse");
                 if (order.getDriver() == null || !order.getDriver().getUser().getId().equals(user.getId()))
                     throw new RuntimeException("Este pedido no está asignado a vos");
+                // FIX: notificación faltante al entregar el pedido
+                notificationService.createNotification(
+                        order.getCustomer().getId(),
+                        "✅ Tu pedido #" + orderId + " ha sido entregado. ¡Buen provecho!",
+                        "ORDER_DELIVERED"
+                );
             }
             default -> throw new RuntimeException("Transición de estado no permitida: " + newStatus);
         }
@@ -194,6 +197,14 @@ public class OrderService {
             throw new RuntimeException("Solo se pueden cancelar pedidos en estado RECIBIDA");
 
         order.setStatus(OrderStatus.CANCELADA);
+
+        // FIX: notificación faltante al cancelar el pedido
+        notificationService.createNotification(
+                order.getCustomer().getId(),
+                "Tu pedido #" + orderId + " ha sido cancelado.",
+                "ORDER_CANCELLED"
+        );
+
         return toResponse(orderRepository.save(order));
     }
 
